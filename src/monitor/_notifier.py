@@ -282,7 +282,13 @@ class Notifier:
                 )
             try:
                 if isinstance(post, str):
-                    await env.bot.send_message(user_id, post, parse_mode='html', silent=not sub.notify)
+                    await env.bot.send_message(
+                        user_id,
+                        post,
+                        parse_mode='html',
+                        silent=not sub.notify,
+                        reply_to=sub.message_thread_id if sub.message_thread_id else None,
+                    )
                     return None
                 await post.send_formatted_post_according_to_sub(sub)
                 if self._user_blocked_counter[user_id]:  # reset the counter if success

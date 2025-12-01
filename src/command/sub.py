@@ -46,6 +46,20 @@ async def cmd_sub(
     args = parse_command(event.raw_text)
     filtered_urls = inner.utils.filter_urls(args)
 
+    message_thread_id = None
+    if len(args) >= 2:
+        last_arg = args[-1]
+        if last_arg.lstrip('-').isdecimal() and last_arg not in filtered_urls:
+            message_thread_id = int(last_arg)
+
+    if message_thread_id is None:
+        try:
+            r = getattr(event.message, 'reply_to', None)
+            if r and getattr(r, 'forum_topic', False):
+                message_thread_id = getattr(r, 'reply_to_top_id', None) or getattr(event.message, 'reply_to_msg_id', None)
+        except Exception:
+            pass
+
     allow_reply = (event.is_private or event.is_group) and chat_id == event.chat_id
     prompt = (
         i18n[lang]['sub_reply_feed_url_prompt_html']
@@ -82,7 +96,7 @@ async def cmd_sub(
 
     msg: Message = await event.respond(i18n[lang]['processing'])
 
-    sub_result = await inner.sub.subs(chat_id, filtered_urls, lang=lang)
+    sub_result = await inner.sub.subs(chat_id, filtered_urls, lang=lang, message_thread_id=message_thread_id)
 
     if sub_result is None:
         await msg.edit(prompt, parse_mode='html')
@@ -184,12 +198,14 @@ async def cmd_list_or_callback_get_list_page(
         await event.respond(i18n[lang]['no_subscription'])
         return
 
+    def _fmt(sub):
+        thread = sub.message_thread_id
+        suffix = (f'  🧵#{thread}' if thread else '  🧵—')
+        return f'<a href="{sub.feed.link}">{escape_html(sub.title or sub.feed.title)}</a>{suffix}'
+
     list_result = ''.join((
-        f'<b>{i18n[lang]["subscription_list"]}</b>\n',  # it occupies a parsing entity
-        '\n'.join(
-            f'<a href="{sub.feed.link}">{escape_html(sub.title or sub.feed.title)}</a>'
-            for sub in page
-        )
+        f'<b>{i18n[lang]["subscription_list"]}</b>\n',
+        '\n'.join(_fmt(sub) for sub in page)
     ))
 
     page_buttons = inner.utils.get_page_buttons(

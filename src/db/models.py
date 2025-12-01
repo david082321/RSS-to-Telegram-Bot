@@ -208,6 +208,7 @@ class Sub(Model, Base):
         description='Display media or not?'
                     '-1=disable, 0=enable',
     )
+    message_thread_id = fields.IntField(null=True)
 
     class Meta:
         table = 'sub'

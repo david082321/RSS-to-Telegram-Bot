@@ -43,7 +43,8 @@ with open(path.normpath(path.join(path.dirname(__file__), '../..', 'opml_templat
 async def sub(user_id: int,
               feed_url: Union[str, tuple[str, str]],
               lang: Optional[str] = None,
-              bypass_feed_sniff: bool = False) -> dict[str, Union[int, str, db.Sub, None]]:
+              bypass_feed_sniff: bool = False,
+              message_thread_id: Optional[int] = None) -> dict[str, Union[int, str, db.Sub, None]]:
     if not bypass_feed_sniff and feed_url in FeedSnifferCache and FeedSnifferCache[feed_url]:
         return await sub(user_id, FeedSnifferCache[feed_url], lang=lang, bypass_feed_sniff=True)
 
@@ -125,21 +126,33 @@ async def sub(user_id: int,
                     'display_title': -100,
                     'display_entry_tags': -100,
                     'style': -100,
-                    'display_media': -100
+                    'display_media': -100,
                 }
             )
-
+            if message_thread_id is not None:
+                _sub.message_thread_id = message_thread_id
+                await _sub.save()
+                logger.info(f'Updated message_thread_id for sub {feed_url} ({user_id}) to {message_thread_id}')
+        
         if not created_new_sub:
             if _sub.title == sub_title and _sub.state == 1:
                 ret['sub'] = None
                 ret['msg'] = 'ERROR: ' + i18n[lang]['already_subscribed']
                 return ret
 
+            updated = False
             if _sub.title != sub_title:
                 _sub.state = 1
                 _sub.title = sub_title
-                await _sub.save()
+                updated = True
                 logger.info(f'Sub {feed_url} for {user_id} updated title to {sub_title}')
+            if message_thread_id is not None and _sub.message_thread_id != message_thread_id:
+                _sub.message_thread_id = message_thread_id
+                updated = True
+                logger.info(f'Sub {feed_url} for {user_id} updated message_thread_id to {message_thread_id}')
+            if updated:
+                _sub.state = 1
+                await _sub.save()
             else:
                 _sub.state = 1
                 await _sub.save()
@@ -162,7 +175,8 @@ async def sub(user_id: int,
 
 async def subs(user_id: int,
                feed_urls: Sequence[Union[str, tuple[str, str]]],
-               lang: Optional[str] = None) \
+               lang: Optional[str] = None,
+               message_thread_id: Optional[int] = None) \
         -> Optional[dict[str, Union[tuple[dict[str, Union[int, str, db.Sub, None]], ...], str, int]]]:
     if not feed_urls:
         return None
@@ -179,7 +193,7 @@ async def subs(user_id: int,
         remaining_feed_urls = feed_urls
         failure = []
 
-    result = await asyncio.gather(*(sub(user_id, url, lang=lang) for url in remaining_feed_urls))
+    result = await asyncio.gather(*(sub(user_id, url, lang=lang, message_thread_id=message_thread_id) for url in remaining_feed_urls))
 
     success = tuple(sub_d for sub_d in result if sub_d['sub'])
     failure.extend(sub_d for sub_d in result if not sub_d['sub'])

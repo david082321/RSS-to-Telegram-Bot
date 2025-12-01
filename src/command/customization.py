@@ -332,7 +332,7 @@ async def callback_get_activate_or_deactivate_page(
         *sub_buttons,
     ) if sub_buttons else None
     await (
-        event.respond(msg, buttons=buttons)
+        event.respond(msg, buttons=buttons, reply_to=event.id if event.is_group else None)
         if event_is_msg
         else event.edit(msg, buttons=buttons)
     )
@@ -403,10 +403,10 @@ async def cmd_set_title(
     sub, title = await parse_command_get_sub_or_user_and_param(event.raw_text, chat_id, max_split=2)
     title = title.strip() if title else None
     if not sub:
-        await event.respond(i18n[lang]['permission_denied_no_direct_use'] % '/set')
+        await event.respond(i18n[lang]['permission_denied_no_direct_use'] % '/set', reply_to=event.id if event.is_group else None)
         return
     if not title and not sub.title:
-        await event.respond(i18n[lang]['cmd_set_title_usage_prompt_html'], parse_mode='html')
+        await event.respond(i18n[lang]['cmd_set_title_usage_prompt_html'], parse_mode='html', reply_to=event.id if event.is_group else None)
         return
     await inner.customization.set_sub_title(sub, title)
     await event.respond(
@@ -421,6 +421,7 @@ async def cmd_set_title(
         buttons=(Button.inline(i18n[lang]['other_settings_button'], data=f'set={sub.id}{callback_tail}'),),
         parse_mode='html',
         link_preview=False,
+        reply_to=event.id if event.is_group else None,
     )
 
 
@@ -440,7 +441,7 @@ async def cmd_set_interval(
     interval = int(interval) if interval and interval.isdigit() and int(interval) >= 1 else None
     minimal_interval = db.EffectiveOptions.minimal_interval
     if not sub_or_user:
-        await event.respond(i18n[lang]['permission_denied_no_direct_use'] % '/set')
+        await event.respond(i18n[lang]['permission_denied_no_direct_use'] % '/set', reply_to=event.id if event.is_group else None)
         return
     if not interval:
         await event.respond(i18n[lang]['cmd_set_interval_usage_prompt_html'], parse_mode='html')
@@ -485,12 +486,12 @@ async def cmd_set_hashtags(
         await event.respond(i18n[lang]['permission_denied_no_direct_use'] % '/set')
         return
     if not hashtags and not sub.tags:
-        await event.respond(i18n[lang]['cmd_set_hashtags_usage_prompt_html'], parse_mode='html')
+        await event.respond(i18n[lang]['cmd_set_hashtags_usage_prompt_html'], parse_mode='html', reply_to=event.id if event.is_group else None)
         return
     try:
         await inner.customization.set_sub_hashtags(sub, hashtags)
     except inner.customization.TooManyHashtagsError:
-        await event.respond(i18n[lang]['set_hashtags_failure_too_many'])
+        await event.respond(i18n[lang]['set_hashtags_failure_too_many'], reply_to=event.id if event.is_group else None)
         return
     await event.respond(
         '\n\n'.join((
@@ -504,4 +505,5 @@ async def cmd_set_hashtags(
         buttons=(Button.inline(i18n[lang]['other_settings_button'], data=f'set={sub.id}' + callback_tail),),
         parse_mode='html',
         link_preview=False,
+        reply_to=event.id if event.is_group else None,
     )

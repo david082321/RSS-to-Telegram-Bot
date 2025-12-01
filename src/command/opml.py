@@ -74,13 +74,14 @@ async def cmd_export(
     chat_id = chat_id or event.chat_id
     opml_file = await inner.sub.export_opml(chat_id)
     if opml_file is None:
-        await event.respond(i18n[lang]['no_subscription'])
+        await event.respond(i18n[lang]['no_subscription'], reply_to=event.id if event.is_group else None)
         return
     await event.respond(
         file=opml_file,
         attributes=(
             types.DocumentAttributeFilename(f"RSStT_export_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.opml"),
         ),
+        reply_to=event.id if event.is_group else None,
     )
 
 

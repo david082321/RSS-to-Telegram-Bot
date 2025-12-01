@@ -55,7 +55,7 @@ async def cmd_lang(
     callback_tail = get_callback_tail(event, chat_id)
     buttons, langs = inner.utils.get_lang_buttons(callback='set_lang', tail=callback_tail)
     msg = '\n'.join(f"{i18n[lang]['select_lang_prompt']}" for lang in langs)
-    await event.respond(msg, buttons=buttons)
+    await event.respond(msg, buttons=buttons, reply_to=event.id if event.is_group else None)
 
 
 @command_gatekeeper(only_manager=False)
@@ -90,7 +90,7 @@ async def cmd_or_callback_help(
     if event.is_private:
         msg += '\n\n' + i18n[lang]['usage_in_channel_or_group_prompt_html']
     await (
-        event.respond(msg, parse_mode='html', link_preview=False)
+        event.respond(msg, parse_mode='html', link_preview=False, reply_to=event.id if event.is_group else None)
         if isinstance(event, TypeEventMsg) or not hasattr(event, 'edit')
         else event.edit(msg, parse_mode='html', link_preview=False)
     )
@@ -98,7 +98,7 @@ async def cmd_or_callback_help(
 
 @command_gatekeeper(only_manager=False)
 async def cmd_version(event: TypeEventMsgHint, *_, **__):
-    await event.respond(env.VERSION)
+    await event.respond(env.VERSION, reply_to=event.id if event.is_group else None)
 
 
 @command_gatekeeper(only_manager=False)

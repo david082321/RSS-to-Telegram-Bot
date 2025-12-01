@@ -94,7 +94,7 @@ async def cmd_sub(
     ):
         env.loop.create_task(reply_message.delete())
 
-    msg: Message = await event.respond(i18n[lang]['processing'])
+    msg: Message = await event.respond(i18n[lang]['processing'], reply_to=event.id if event.is_group else None)
 
     sub_result = await inner.sub.subs(chat_id, filtered_urls, lang=lang, message_thread_id=message_thread_id)
 
@@ -128,6 +128,7 @@ async def cmd_unsub(
             i18n[lang]['unsub_choose_sub_prompt_html'] if buttons else i18n[lang]['no_subscription'],
             buttons=buttons,
             parse_mode='html',
+            reply_to=event.id if event.is_group else None,
         )
         return
 
@@ -148,13 +149,14 @@ async def cmd_or_callback_unsub_all(
     if is_callback:
         backup_file = await inner.sub.export_opml(chat_id)
         if backup_file is None:
-            await event.respond(i18n[lang]['no_subscription'])
+            await event.respond(i18n[lang]['no_subscription'], reply_to=event.id if event.is_group else None)
             return
         await event.respond(
             file=backup_file,
             attributes=(
                 types.DocumentAttributeFilename("RSStT_unsub_all_backup.opml"),
             ),
+            reply_to=event.id if event.is_group else None,
         )
 
         unsub_all_result = await inner.sub.unsub_all(chat_id, lang=lang)
@@ -168,9 +170,10 @@ async def cmd_or_callback_unsub_all(
                 [Button.inline(i18n[lang]['unsub_all_confirm'], data=f'unsub_all{callback_tail}')],
                 [Button.inline(i18n[lang]['unsub_all_cancel'], data='cancel')],
             ],
+            reply_to=event.id if event.is_group else None,
         )
         return
-    await event.respond(i18n[lang]['no_subscription'])
+    await event.respond(i18n[lang]['no_subscription'], reply_to=event.id if event.is_group else None)
 
 
 @command_gatekeeper(only_manager=False)
@@ -195,7 +198,7 @@ async def cmd_list_or_callback_get_list_page(
     )
 
     if page_count == 0:
-        await event.respond(i18n[lang]['no_subscription'])
+        await event.respond(i18n[lang]['no_subscription'], reply_to=event.id if event.is_group else None)
         return
 
     def _fmt(sub):
@@ -220,7 +223,7 @@ async def cmd_list_or_callback_get_list_page(
     await (
         event.edit(list_result, parse_mode='html', buttons=page_buttons)
         if is_callback
-        else event.respond(list_result, parse_mode='html', buttons=page_buttons)
+        else event.respond(list_result, parse_mode='html', buttons=page_buttons, reply_to=event.id if event.is_group else None)
     )
 
 

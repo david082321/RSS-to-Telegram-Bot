@@ -275,7 +275,7 @@ async def cmd_user_info_or_callback_set_user(
     await (
         event.edit(msg_text, parse_mode='html', buttons=buttons)
         if is_callback
-        else event.respond(msg_text, parse_mode='html', buttons=buttons)
+        else event.respond(msg_text, parse_mode='html', buttons=buttons, reply_to=event.id if event.is_group else None)
     )
 
 
@@ -300,10 +300,10 @@ async def cmd_set_sub_limit(event: TypeEventMsgHint, *_, lang: Optional[str] = N
     """
     args = parse_command(event.raw_text, strip_target_chat=False, strip_inline_header=True)
     if len(args) < 2 or not args[1].lstrip('-').isdecimal():
-        await event.respond(i18n[lang]['permission_denied_no_direct_use'] % '/user_info')
+        await event.respond(i18n[lang]['permission_denied_no_direct_use'] % '/user_info', reply_to=event.id if event.is_group else None)
         return
     if len(args) < 3 or not args[2].lstrip('-').isdecimal():
-        await event.respond(i18n[lang]['cmd_set_sub_limit_prompt_html'], parse_mode='html')
+        await event.respond(i18n[lang]['cmd_set_sub_limit_prompt_html'], parse_mode='html', reply_to=event.id if event.is_group else None)
         return
     user_id, sub_limit = int(args[1]), int(args[2])
     sub_limit = max(sub_limit, -1)

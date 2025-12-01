@@ -588,7 +588,7 @@ def command_gatekeeper(
                         raise events.StopPropagation
                     # oops, the group hasn't been migrated to a supergroup. a migration is needed
                     guide_msg, guide_buttons = get_group_migration_help_msg(lang)
-                    await event.respond(guide_msg, buttons=guide_buttons)
+                    await event.respond(guide_msg, buttons=guide_buttons, reply_to=event.id if event.is_group else None)
                     logger.warning(
                         f'Refused {describe_user()} to use {command} because a group migration to supergroup is needed'
                     )
@@ -941,5 +941,5 @@ async def check_sub_limit(event: TypeEventMsgHint, user_id: int, lang: Optional[
         msg = i18n[lang]['sub_limit_reached_prompt'] % (curr_count, limit)
         if db.EffectiveOptions.sub_limit_reached_message:
             msg += f'\n\n{db.EffectiveOptions.sub_limit_reached_message}'
-        await event.respond(msg)
+        await event.respond(msg, reply_to=event.id if event.is_group else None)
         raise events.StopPropagation
